@@ -1,0 +1,175 @@
+\documentclass{article}
+
+
+\begin{document}
+
+<<echo=FALSE>>=
+library(knitr)
+@
+
+\section{Overview}
+Following libraries will be used
+<<>>=
+source('./generators.R')
+source("./Model.R");
+@
+Set random seed
+<<>>=
+set.seed(1)
+@
+
+\section{Random number generators}
+
+\subsection{Uniform Distribution}
+<<>>=
+x=runif(n=1000000, min=0, max=1);
+@
+
+<<echo=FALSE,fig.width=7,fig.height=5>>=
+hist(x)
+@
+
+\subsection{Exponential Distribution}
+<<>>=
+lambda=2
+x <- expDist(1/lambda, 1000)
+@
+
+<<echo=FALSE,fig.width=7,fig.height=5>>=
+distrHist(x, "dexp", 1/lambda);
+@
+
+<<echo=FALSE,eval=TRUE,results='asis'>>=
+knitr::kable(data.frame(
+  "Real Mean"=c(mean(x)),
+  "Real S.D."=c(sd(x)),
+  "Expected Mean"=c((1/lambda)^-1),
+  "Expected S.D."=c((1/lambda)^-1)
+  ), format='latex');
+@
+
+\subsubsection{Distribution fitting}
+<<echo=FALSE>>=
+generatorTest(x, "pexp", 1/lambda)
+@
+
+\subsection{Erlang distribution}
+<<>>=
+l=3; lambda=0.25;
+x <- NULL
+for(i in 1:1000) { 
+  x <- c(x,erlangDist(l, lambda))  
+  #x <- c(x,erlangDist(l, 1/lambda)) 
+}
+@
+
+<<echo=FALSE,fig.width=7,fig.height=5>>=
+distrHist(x, "dgamma", scale=1/lambda, shape=l);
+#distrHist(x, "dgamma", scale=lambda, shape=l);
+@
+
+<<echo=FALSE,eval=TRUE,results='asis'>>=
+knitr::kable(data.frame(
+  "Real Mean"=c(mean(x)),
+  "Real S.D."=c(sd(x)),
+  "Expected Mean"=c(l/lambda),
+  "Expected S.D."=c(sqrt(l/lambda^2))
+  ), format='latex');
+@
+
+\subsubsection{Distribution fitting}
+<<echo=FALSE>>=
+generatorTest(x, "pgamma", scale=1/lambda, shape=l)
+#generatorTest(x, "pgamma", scale=lambda, shape=l)
+@
+
+\subsubsection{Poisson distribution}
+<<>>=
+lambda=0.5
+x <- expDist(1/lambda, 1000);
+@
+
+<<echo=FALSE,fig.width=7,fig.height=5>>=
+distrHist(x, "dexp", rate=1/lambda);
+@
+
+<<echo=FALSE,eval=TRUE,results='asis'>>=
+knitr::kable(data.frame(
+  "Real Mean"=c(mean(x)),
+  "Real S.D."=c(sd(x)),
+  "Expected Mean"=c((1/lambda)^-1),
+  "Expected S.D."=c((1/lambda)^-1)
+  ), format='latex');
+@
+
+\subsubsection{Distribution fitting}
+<<echo=FALSE>>=
+generatorTest(x, "pexp", rate=1/lambda)
+@
+
+\subsection{Normal distribution}
+<<>>=
+mu=12; sigma=2; n=120000;
+x <- NULL
+for(i in 1:1000) { 
+  x <- c(x,normDist(mu, sigma, n))  
+}
+@
+
+<<echo=FALSE,fig.width=7,fig.height=5>>=
+distrHist(x, "dnorm", mean=mu, sd=sigma);
+@
+
+<<echo=FALSE,eval=TRUE,results='asis'>>=
+knitr::kable(data.frame(
+  "Real Mean"=c(mean(x)),
+  "Real S.D."=c(sd(x)),
+  "Expected Mean"=c(mu),
+  "Expected S.D."=c(sigma)
+  ), format='latex');
+@
+
+\subsubsection{Distribution fitting}
+<<echo=FALSE>>=
+generatorTest(x, "pnorm", mean=mu, sd=sigma);
+@
+
+\section{Queueing System model}
+<<>>=
+q <- new("QueueingSystem");
+q <- mm1(q);
+@
+
+\subsection{Queue statistics}
+
+\subsubsection{Queue length statistics}
+<<echo=FALSE,eval=TRUE>>=
+summary(q@stats$n)
+@
+\subsubsection{Queue time statistics}
+<<echo=FALSE,eval=TRUE>>=
+summary(q@stats$time)
+@
+\subsubsection{Queue zero time statistics}
+<<echo=FALSE,eval=TRUE>>=
+summary(q@stats[q@stats$S == 1,]$time)
+@
+\subsubsection{Server statistics}
+<<echo=FALSE,eval=TRUE,results='asis'>>=
+knitr::kable(mm1ServerStats(q), format='latex')
+@
+
+\subsection{Report}
+<<echo=FALSE,eval=TRUE,results='asis'>>=
+reportHead <- head(q@stats, n=50)
+reportHead <- q@stats[1:50,]
+knitr::kable(reportHead, format='latex')
+@
+
+<<echo=FALSE,eval=TRUE,results='asis'>>=
+reportTail <- tail(q@stats, n=50)
+reportTail$Q <- paste(strtrim(reportTail$Q, 35), '...')
+knitr::kable(reportTail, format='latex')
+@
+
+\end{document}
